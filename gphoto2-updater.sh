@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Gphoto2 compiler and installer script
+# Gphoto2 compiler and installer script v0.5
 #
 # This script is specifically created for Raspbian http://www.raspbian.org
 # and Raspberry Pi http://www.raspberrypi.org but should work over any
@@ -16,7 +16,6 @@
 # Updated for gphoto2 2.5.8 by scribblemaniac
 # Updated for gphoto2 2.5.9 at GitHub by Gonzalo Cao
 # Updated for last development release at GitHub by Gonzalo Cao
-# Updated for gphoto2 2.5.10 by Gonzalo Cao
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,56 +30,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-latest_stable_version=2_5_9
-display_version=$(echo ${latest_stable_version} | tr '_' '.')
-branch_libgphoto=''
-branch_gphoto=''
 
 if [ "$(whoami)" != "root" ]; then
 	echo "Sorry, this script must be executed with sudo or as root"
 	exit 1
 fi
 
-usage()
-{
-cat << EOF
-usage: sudo $0 [-h|--help|-s|--stable|-d|--development]
 
--h|--help: this help message
--s|--stable: select the stable version: ${display_version}
--d|--development: select the latest develoment version
-
-Note: An interactive menu is displayed if no parameter is given.
-EOF
-exit 1
-}
-
-parse_options()
-{
-if ! all_options=$(getopt -o hds -l help,development,stable -- "$@")
-then
-    usage
-fi
-eval set -- "$all_options"
-
-while true
-do
-    case "$1" in
-        -h|--help)          usage;;
-        -d|--development)   shift 1;;
-        -s|--stable)        branch_libgphoto="--branch libgphoto2-${latest_stable_version}-release"
-                            branch_gphoto="--branch gphoto2-${latest_stable_version}-release"
-                            shift 1;;
-        --)                 break ;;
-    esac
-done
-}
-
-menu()
-{
 PS3='Please enter your choice: '
 options=("Install last development version"
-         "Install last stable release (${display_version})"
+         "Install last stable release (2.5.9)"
 				 "Quit")
 
 select opt in "${options[@]}"
@@ -92,12 +51,12 @@ do
 						echo
 						break
             ;;
-        "Install last stable release (${display_version})")
+        "Install last stable release (2.5.9)")
 						echo
-            echo "\"Install last stable release (${display_version})\" selected"
+            echo "\"Install last stable release (2.5.9)\" selected"
 						echo
-						branch_libgphoto="--branch libgphoto2-${latest_stable_version}-release"
-						branch_gphoto="--branch gphoto2-${latest_stable_version}-release"
+						branch_libgphoto="--branch libgphoto2-2_5_9-release"
+						branch_gphoto="--branch gphoto2-2_5_9-release"
 						break
             ;;
         "Quit")
@@ -106,16 +65,7 @@ do
         *) echo invalid option;;
     esac
 done
-}
 
-# Display the menu if the script was called without any parameters
-# else try to parse the options
-if [ $# -eq 0 ]
-then
-    menu
-else
-    parse_options "$@"
-fi
 
 echo
 echo "----------------"
@@ -139,7 +89,7 @@ echo "Installing dependencies"
 echo "-----------------------"
 echo
 
-apt-get install -y build-essential libltdl-dev libusb-dev libexif-dev libpopt-dev libudev-dev pkg-config git automake autoconf autopoint gettext libtool wget
+apt-get install -y build-essential libltdl-dev libusb-dev libexif-dev libpopt-dev libudev-dev pkg-config git automake autoconf autopoint gettext libtool
 
 echo
 echo "-------------------------"
@@ -151,6 +101,33 @@ mkdir gphoto2-temp-folder
 cd gphoto2-temp-folder
 
 echo "gphoto2-temp-folder created"
+
+
+echo
+echo "-------------------------"
+echo "Downloading libusb 1.0.20"
+echo "-------------------------"
+echo
+
+if (wget -q http://downloads.sourceforge.net/project/libusb/libusb-1.0/libusb-1.0.20/libusb-1.0.20.tar.bz2)
+	then
+		tar jxf libusb-1.0.20.tar.bz2
+		cd libusb-1.0.20/
+	else
+		echo "Unable to get libusb"
+		echo "Exiting..."
+		exit 1
+fi
+
+echo
+echo "--------------------------------------"
+echo "Compiling and installing libusb 1.0.20"
+echo "--------------------------------------"
+
+./configure
+make
+make install
+cd ..
 
 
 echo
@@ -177,7 +154,7 @@ echo
 
 autoreconf --install --symlink
 ./configure
-make -j "$cores"
+make
 make install
 cd ..
 
@@ -205,7 +182,7 @@ echo
 
 autoreconf --install --symlink
 ./configure
-make -j "$cores"
+make
 make install
 cd ..
 
